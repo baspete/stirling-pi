@@ -9,6 +9,12 @@
     "axios": "^0.21.1",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "node-schedule": "^2.0.0"
+    "node-schedule": "^2.0.0",
+    "oled-font-5x7": "^1.0.3",
+    "onoff": "^6.0.1",
+    "rpi-oled": "^0.9.1"
+  },
+  "prettier": {
+    "singleQuote": true
   }
 }
