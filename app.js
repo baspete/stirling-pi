@@ -8,6 +8,8 @@ const heater = new Gpio(18, 'out');
 
 // min/max duty cycle
 const duty = [0.1, 0.8];
+// what measurement are we looking for
+const mKey = 'wind_gust';
 // min/max measurement range
 const range = [0, 15];
 
@@ -19,8 +21,6 @@ const url = `https://swd.weatherflow.com/swd/rest/observations/station/40983?tok
 // this object will hold our latest observation
 let obs = {};
 
-// what measurement are we looking for
-const mKey = 'wind_gust';
 // Use this to calculate our running average.
 let mHistory = [0, 0, 0, 0, 0];
 
