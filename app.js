@@ -43,8 +43,6 @@ function doPwm(y) {
 
 function startHeater() {
   setInterval(() => {
-    console.log('history', mHistory);
-    console.log('avg', avg(mHistory));
     doPwm(transform(avg(mHistory)));
   }, interval);
 }
@@ -55,12 +53,14 @@ function getLatestObs() {
     console.log('latest obs', obs);
     mHistory.shift();
     mHistory.push(obs[mKey]);
+    console.log('history', mHistory, 'avg', avg(mHistory));
   });
 }
 
 function avg(arr) {
   const total = arr.reduce((acc, c) => acc + c, 0);
-  return total / arr.length;
+  const avg = total / arr.length;
+  return Math.round((avg + Number.EPSILON) * 10) / 10; // 1 decimal place
 }
 
 // Startup
