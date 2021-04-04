@@ -8,21 +8,29 @@ const heater = new Gpio(18, 'out');
 
 // min/max duty cycle
 const duty = [0.1, 0.8];
-// what measurement are we looking for
-const mKey = 'wind_gust';
-// min/max measurement range
-const range = [0, 15];
-
 // PWM interval (ms)
 const interval = 2000;
 
-const url = `https://swd.weatherflow.com/swd/rest/observations/station/40983?token=${process.env.TOKEN}`;
-
-// this object will hold our latest observation
-let obs = {};
-
 // Use this to calculate our running average.
-let mHistory = [0, 0, 0, 0, 0];
+let history = [0, 0, 0, 0, 0];
+// min/max measurement range (will be updated over time)
+let range = [0, 15];
+
+let sources = {
+  wind: {
+    url: `https://swd.weatherflow.com/swd/rest/observations/station/40983?token=${process.env.TOKEN}`,
+  },
+  aircraft: {
+    url: 'http://192.168.1.5/dump1090-fa/data/aircraft.json',
+  },
+};
+
+// Calculate the average of the values in an array
+function avg(arr) {
+  const total = arr.reduce((acc, c) => acc + c, 0);
+  const avg = total / arr.length;
+  return Math.round((avg + Number.EPSILON) * 10) / 10; // 1 decimal place
+}
 
 // Affine transformation (y = mx + b)
 // with stops at duty[0,1]
@@ -43,30 +51,33 @@ function doPwm(y) {
 
 function startHeater() {
   setInterval(() => {
-    doPwm(transform(avg(mHistory)));
+    doPwm(transform(avg(history)));
   }, interval);
 }
 
-function getLatestObs() {
-  axios.get(url).then((response) => {
-    obs = response.data.obs[0];
-    console.log('latest obs', obs);
-    mHistory.shift();
-    mHistory.push(obs[mKey]);
-    console.log('history', mHistory, 'avg', avg(mHistory));
+function getData(type) {
+  let val;
+  axios.get(sources[type].url).then((response) => {
+    switch (type) {
+      case 'wind':
+        val = response.data.obs[0]['wind_gust'];
+        break;
+      case 'aircraft':
+        val = response.data.aircraft.length;
+        break;
+    }
+    if (val < range[0]) range[0] = val;
+    if (val > range[1]) range[1] = val;
+    history.shift();
+    history.push(val);
+    console.log(type, 'history', history, 'avg', avg(history));
+    console.log(type, 'range', range[0], range[1]);
   });
 }
 
-function avg(arr) {
-  const total = arr.reduce((acc, c) => acc + c, 0);
-  const avg = total / arr.length;
-  return Math.round((avg + Number.EPSILON) * 10) / 10; // 1 decimal place
-}
-
-// Startup
-getLatestObs();
 startHeater();
+getData('aircraft');
 // Grab the latest weather every minute
 schedule.scheduleJob('*/1 * * * *', () => {
-  getLatestObs();
+  getData('aircraft');
 });
