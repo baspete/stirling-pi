@@ -69,7 +69,7 @@ cd stirling-pi
 yarn install
 ```
 
-### Edit your data source(s)
+### Edit app.js and update the data source(s)
 
 (There's a super-handy VS Code plugin called [Remote - SSH](https://github.com/Microsoft/vscode-remote-release) that you can use to edit code on your Raspberry Pi from VS Code.)
 
@@ -105,7 +105,7 @@ const sources = {
 
 Edit this section, keeping the following in mind:
 
-- **duty** - This is an array with min and max possible PWM duty cycles. Set the first number just high enough to keep the Stirling engine spinning at idle. Set the high number at or below 1.0. In my case I found that anything above 0.8 spun the Stirling engine like a monkey on crack.
+- **duty** - This is an array with min and max possible PWM duty cycles. Set the first number just high enough to keep the Stirling engine spinning at idle. If you set this too low the Stirling engine will stop spinning and you'll need to give it a push to get it going again. Set the high number at or below 1.0. In my case I found that anything above 0.8 spun the Stirling engine like a monkey on crack.
 - **pwmInterval** - This is the length of a single PWM interval in milliseconds. The heater/Stirling engine combination has a fair amount of thermal and physical inertia, so you can set this to a few seconds. 2000ms is fine.
 - **heaterPin** - Set this to whatever you used for the FET signal. Note that this is the logical pin, not the physical pin.
 
@@ -130,7 +130,7 @@ TOKEN=blah-blah-blah
 TYPE='aircraft'
 ```
 
-These envionment variables can then be read in your code as `process.env.TOKEN` and `process.env.TYPE`.
+These envionment variables can then be read in your code as `process.env.TOKEN` and `process.env.TYPE`. Note that if you choose not to do this you'll need to update the value for `dataType` in the `app.js` STARTUP block.
 
 ## Usage
 
@@ -140,7 +140,7 @@ You can test your application by typing
 node app.js
 ```
 
-If everything is working you'll see some logging info in the console. If you've properly set the values in the `duty` array, a minute or two the heater should be warm enough to keep the Stirling engine spinning. Give the flywheel a push and it should keep going.
+If everything is working you'll see some logging info in the console. If you've properly set the values in the `duty` array, in a minute or two the heater should be warm enough to keep the Stirling engine spinning. Give the flywheel a push and it should keep going.
 
 As your Raspberry Pi updates data based on what you've put in `sources` the PWM duty cycle will change accordingly, changing the amount of heat going into your Stirling engine.
 
