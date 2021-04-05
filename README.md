@@ -105,7 +105,7 @@ const sources = {
 
 Edit this section, keeping the following in mind:
 
-- **duty** - This is an array with min and max possible PWM duty cycles. Set the first number just high enough to keep the Stirling engine spinning at idle. If you set this too low the Stirling engine will stop spinning and you'll need to give it a push to get it going again. Set the high number at or below 1.0. In my case I found that anything above 0.8 spun the Stirling engine like a monkey on crack.
+- **duty** - This is an array with min and max possible PWM duty cycles where the lowest min is 0 an the highest max is 1. Set the first number just high enough to keep the Stirling engine spinning at idle. If you set this too low the Stirling engine will stop spinning and you'll need to give it a push to get it going again. Set the high number at or below 1.0. In my case I found that anything above 0.8 spun the Stirling engine like a monkey on crack.
 - **pwmInterval** - This is the length of a single PWM interval in milliseconds. The heater/Stirling engine combination has a fair amount of thermal and physical inertia, so you can set this to a few seconds. 2000ms is fine.
 - **heaterPin** - Set this to whatever you used for the FET signal. Note that this is the logical pin, not the physical pin.
 
