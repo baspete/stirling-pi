@@ -14,7 +14,7 @@ const interval = 2000;
 // Use this to calculate our running average.
 let history = [0, 0, 0, 0, 0];
 // min/max measurement range (will be updated over time)
-let range = [0, 15];
+let range = [30, 100];
 
 let sources = {
   wind: {
@@ -42,6 +42,13 @@ function transform(x) {
   return y;
 }
 
+function getUniqueAircraft(aircraft) {
+  let results = aircraft.filter((a) => {
+    return a.flight ? true : false;
+  });
+  return results;
+}
+
 function doPwm(y) {
   heater.writeSync(1);
   setTimeout(() => {
@@ -63,7 +70,7 @@ function getData(type) {
         val = response.data.obs[0]['wind_gust'];
         break;
       case 'aircraft':
-        val = response.data.aircraft.length;
+        val = getUniqueAircraft(response.data.aircraft).length;
         break;
     }
     if (val < range[0]) range[0] = val;
