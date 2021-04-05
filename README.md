@@ -2,13 +2,13 @@
 
 ![running](images/running.gif)
 
-This project shows how to control the speed of a stirling engine based on live data. It uses a Raspberry Pi to retrieve data from any of several data sources, and then uses that data to control the temperature of a small heater placed under the stirling engine.
+This project shows how to control the speed of a [stirling engine](https://en.wikipedia.org/wiki/Stirling_engine) based on live data. It uses a Raspberry Pi to retrieve data from any of several data sources, and then uses [pulse width modulation](https://en.wikipedia.org/wiki/Pulse-width_modulation) (PWM) to control the temperature of a small heater placed under the stirling engine.
 
 ## Ingredients
 
 1. **A Raspberry Pi** - I used a 3B+ but pretty much anything will work.
 1. **A Stirling Engine** - The more sensitive, the better. I used one of [these](https://www.stirlingengine.co.uk/d.asp?product=KS90_BLU_KIT) which are long-lasting and well made.
-1. **A Heater** - The Kontax Stirling engines are about the diameter of a coffee cup, so I used a [USB coffee cup heater](https://www.amazon.com/gp/product/B08MCZ78MY). This has the advantage of running at 5V.
+1. **A Heater** - My Stirling engine is about the diameter of a coffee cup, so I used a [USB coffee cup heater](https://www.amazon.com/gp/product/B08MCZ78MY). This has the advantage of running at 5V, which means I could use the same power source as the Raspberry Pi (with some limitations--see below).
 1. **A Transistor** - The Raspberry Pi can't provide enough current to drive the heater directly, so we'll need a [FET](https://en.wikipedia.org/wiki/Field-effect_transistor). I had [one of these](https://www.amazon.com/gp/product/B07GLNCRR4) lying around, which have nice terminals for hooking up the Raspberry Pi's GPIO pins, the heater power supply, and the heater itself, but if you're up for soldering you could use just about anything here.
 1. **A Power Supply** - Since both the Raspberry Pi and the heater are powered by 5V, I just used a [dual-output USB wall wart](https://www.amazon.com/gp/product/B07DFWKBF7). _IMPORTANT_: make sure the outputs are isolated or each time the heater comes on the RPi will see a voltage drop and reset.
 1. **Wires, Connectors, etc** - You'll need a way to connect your project to the power supply, and hookup wires to connect the GPIO pins to the FET.
@@ -112,9 +112,9 @@ Edit this section, keeping the following in mind:
 For `sources` I'm showing examples based on my [FlightAware ADS-B receiver](https://flightaware.com/adsb/piaware/) and my [Weatherflow Tempest weather station](https://weatherflow.com/tempest-weather-system/). Here's what those parameters mean:
 
 - **url** - where to get the data.
-- **param** - what parameter to measure.
-- **minMax** - an array with the minimum and maximum expected values for `param`. Start with some conservative numbers for here; over time the app will adjust these outward as needed.
-- **historyLength** - If you set this to greater then 1, the program will use a running average this many historical measurements to smooth noisy data.
+- **param** - what parameter to measure. See the note below about the `getData()` function.
+- **minMax** - an array with the minimum and maximum expected values for `param`. Start with some conservative numbers here; over time the app will adjust these outward as needed. Note that with no persistent storage this will reset anytime your program restarts.
+- **historyLength** - If you set this to greater then 1, the program will use a running average of this many historical measurements to smooth noisy data.
 - **dataInterval** - How often (in minutes) to retrieve new data.
 
 #### Note about sources
