@@ -3,88 +3,163 @@ const axios = require('axios').default;
 const schedule = require('node-schedule');
 const Gpio = require('onoff').Gpio;
 
-// Assign the heater to a GPIO pin
-const heater = new Gpio(18, 'out');
+// ***********************************************
+// CONFIGURATION
 
-// min/max duty cycle
+// Min/Max duty cycle. duty[0] is the min required to keep
+// the stirling engine idling. duty[1] is the max to keep
+// it from spinning like a monkey on cocaine and throwing a rod.
 const duty = [0.1, 0.8];
-// PWM interval (ms)
-const interval = 2000;
 
-// Use this to calculate our running average.
-let history = [0, 0, 0, 0, 0];
-// min/max measurement range (will be updated over time)
-let range = [30, 100];
+// Length (ms) of each PWM interval.
+const pwmInterval = 2000;
 
-let sources = {
+// Heater control pin.
+const heaterPin = 18; // physical pin 12
+
+// Data sources, parameter to measure, initial min/max guesses etc
+const sources = {
   wind: {
     url: `https://swd.weatherflow.com/swd/rest/observations/station/40983?token=${process.env.TOKEN}`,
+    param: 'wind_gust',
+    minMax: [0, 20],
+    historyLength: 5, // super noisy
+    dataInterval: 1,
   },
   aircraft: {
     url: 'http://192.168.1.5/dump1090-fa/data/aircraft.json',
+    param: 'flight',
+    minMax: [10, 100],
+    historyLength: 1, // not noisy
+    dataInterval: 1,
   },
 };
 
-// Calculate the average of the values in an array
+// ***********************************************
+// FUNCTIONS
+
+/**
+ * Given an array of numbers, calculate the average.
+ * Rounds to 1 decimal place.
+ * @param {array} arr
+ * @returns {number}
+ */
 function avg(arr) {
-  const total = arr.reduce((acc, c) => acc + c, 0);
+  const total = arr.reduce((b, c) => b + c, 0);
   const avg = total / arr.length;
-  return Math.round((avg + Number.EPSILON) * 10) / 10; // 1 decimal place
+  return Math.round((avg + Number.EPSILON) * 10) / 10;
 }
 
-// Affine transformation (y = mx + b)
-// with stops at duty[0,1]
-function transform(x) {
+/**
+ * Affine transformation (y = mx + b)
+ * Given a number, a domain and a range
+ * this will do an affine transformation with stops
+ * at range[0] and range[1].
+ * @param {number} x
+ * @param {array} domain - possible input value endpoints
+ * @param {array} range - possible output value endpoints
+ * @returns {number} y (rounded to 2 decimal places)
+ */
+function transform(x, domain, range) {
   let y =
-    ((duty[1] - duty[0]) / (range[1] - range[0])) * (x - range[0]) + duty[0];
-  y = y <= duty[1] ? y : duty[1];
-  y = y >= duty[0] ? y : duty[0];
+    ((range[1] - range[0]) / (domain[1] - domain[0])) * (x - domain[0]) +
+    range[0];
+  // Round to 2 decimal places
+  y = Math.round((y + Number.EPSILON) * 100) / 100;
+  // Stops at range[0] and range[1]
+  y = y <= range[1] ? y : range[1];
+  y = y >= range[0] ? y : range[0];
   return y;
 }
 
-function getUniqueAircraft(aircraft) {
+/**
+ * Given an array of dump1090 ADS-B data, return a
+ * filtered array based on the presence of a property.
+ * The goal here is to remove non-aircraft items.
+ * @param {array} aircraft - array of aircraft
+ * @param {string} property - the property to filter on
+ * @returns {array}
+ */
+function filterAircraft(aircraft, property) {
   let results = aircraft.filter((a) => {
-    return a.flight ? true : false;
+    return a[property] ? true : false;
   });
   return results;
 }
 
-function doPwm(y) {
-  heater.writeSync(1);
-  setTimeout(() => {
-    heater.writeSync(0);
-  }, y * interval);
-}
-
-function startHeater() {
-  setInterval(() => {
-    doPwm(transform(avg(history)));
-  }, interval);
-}
-
+/**
+ * Retrieve data and update the history. Updates the appropriate
+ * minMax if data is outside current values.
+ * @param {string} type Data type ('aircraft', 'wind', etc)
+ */
 function getData(type) {
-  let val;
-  axios.get(sources[type].url).then((response) => {
-    switch (type) {
-      case 'wind':
-        val = response.data.obs[0]['wind_gust'];
-        break;
-      case 'aircraft':
-        val = getUniqueAircraft(response.data.aircraft).length;
-        break;
-    }
-    if (val < range[0]) range[0] = val;
-    if (val > range[1]) range[1] = val;
-    history.shift();
-    history.push(val);
-    console.log(type, 'history', history, 'avg', avg(history));
-    console.log(type, 'range', range[0], range[1]);
+  return new Promise((resolve, reject) => {
+    let val;
+    axios
+      .get(sources[type].url)
+      .then((response) => {
+        switch (type) {
+          case 'wind':
+            val = response.data.obs[0][sources[type].param];
+            break;
+          case 'aircraft':
+            val = filterAircraft(response.data.aircraft, sources[type].param)
+              .length;
+            break;
+        }
+        // Do we need to move the min/max stops wider?
+        if (val < sources[type].minMax[0]) sources[type].minMax[0] = val;
+        if (val > sources[type].minMax[1]) sources[type].minMax[1] = val;
+        // Update the history array
+        history.push(val);
+        // Keep only the last `historyLength` values
+        if (history.length > sources[type].historyLength) {
+          history.shift();
+        }
+        // Log something useful
+        console.info(
+          type,
+          'history:',
+          history,
+          'avg:',
+          avg(history),
+          `(${sources[type].minMax[0]}-${sources[type].minMax[1]})`,
+          'duty cycle:',
+          transform(avg(history), sources[dataType].minMax, duty)
+        );
+        resolve(val);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   });
 }
 
-startHeater();
-getData('aircraft');
-// Grab the latest weather every minute
-schedule.scheduleJob('*/1 * * * *', () => {
-  getData('aircraft');
+// ***********************************************
+// STARTUP
+
+// Which data source to use
+const dataType = process.env.TYPE;
+
+// This will hold the last few measurements, so
+// we can calculate a running average for noisy data.
+let history = [];
+
+// Get initial data and populate the history array.
+getData(dataType).then((val) => history.push(val));
+
+// Assign the heater to a GPIO pin
+const heater = new Gpio(heaterPin, 'out');
+
+// This is the main PWM loop, running continuously at 'interval'
+setInterval(() => {
+  heater.writeSync(1); // heater on
+  setTimeout(() => {
+    heater.writeSync(0); // heater off
+  }, transform(avg(history), sources[dataType].minMax, duty) * pwmInterval);
+}, pwmInterval);
+
+// Set a schedule to grab data at the right interval
+schedule.scheduleJob(`*/${sources[dataType].dataInterval} * * * *`, () => {
+  getData(dataType);
 });
