@@ -2,6 +2,25 @@ require('dotenv').config();
 const axios = require('axios').default;
 const schedule = require('node-schedule');
 const Gpio = require('onoff').Gpio;
+const { http, https } = require('follow-redirects');
+
+// ***********************************************
+// AUTHENTICATION
+
+const authHost = 'https://app.vssps.visualstudio.com/oauth2/authorize?client_id=166896BA-1284-4D74-ACBE-02C07DC0B002&response_type=Assertion&state=foo&scope=vso.agentpools&redirect_uri=https://localhost';
+const tokenHost = 'https://app.vssps.visualstudio.com/oauth2/token?client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer&grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer'
+
+axios.get(authHost).then(response => {
+  console.log('response', response);
+})
+
+// const request = https.request({
+//   host: authHost
+// }, response => {
+//   console.log(response.responseUrl);
+// });
+// request.end();
+
 
 // ***********************************************
 // CONFIGURATION
@@ -9,7 +28,7 @@ const Gpio = require('onoff').Gpio;
 // Min/Max duty cycle. duty[0] is the min required to keep
 // the stirling engine idling. duty[1] is the max to keep
 // it from spinning like a monkey on cocaine and throwing a rod.
-const duty = [0.1, 0.8];
+const duty = [0.1, 0.7];
 
 // Length (ms) of each PWM interval.
 const pwmInterval = 2000;
@@ -22,8 +41,8 @@ const sources = {
   wind: {
     url: `https://swd.weatherflow.com/swd/rest/observations/station/40983?token=${process.env.TOKEN}`,
     param: 'wind_gust',
-    minMax: [0, 20],
-    historyLength: 5, // super noisy
+    minMax: [0, 10],
+    historyLength: 3, // super noisy
     dataInterval: 1,
   },
   aircraft: {
@@ -33,6 +52,17 @@ const sources = {
     historyLength: 1, // not noisy
     dataInterval: 1,
   },
+  builds: {
+    url: 'https://dev.azure.com/geaviationdigital-dss/_apis/distributedtask/pools/27/agents',
+    param: 'value',
+    minMax: [0, 10],
+    historyLength: 1, // not noisy
+    dataInterval: 1,
+    auth: {
+      authUrl: 'https://app.vssps.visualstudio.com/oauth2/authorize&response_type=Assertion',
+      tokenUrl: 'https://app.vssps.visualstudio.com/oauth2/token?client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer&grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer',
+    }
+  }
 };
 
 // ***********************************************
