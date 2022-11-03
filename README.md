@@ -73,64 +73,38 @@ yarn install
 
 (There's a super-handy VS Code plugin called [Remote - SSH](https://github.com/Microsoft/vscode-remote-release) that you can use to edit code on your Raspberry Pi from VS Code.)
 
-Open the `app.js` file in your editor and look a the "CONFIGURATION" section. It should look something like this:
+Open the `config.js` file in your editor. Edit the values as needed, keeping the following in mind:
 
-```javascript
-const duty = [0.1, 0.8];
+- **duty** (optional) - This is an array with min and max possible PWM duty cycles where the lowest min is 0 an the highest max is 1. Set the first number just high enough to keep the Stirling engine spinning at idle. If you set this too low the Stirling engine will stop spinning and you'll need to give it a push to get it going again. Set the high number at or below 1.0. In my case I found that anything above 0.8 spun the Stirling engine like a monkey on crack.
+- **pwmInterval** (optional) - This is the length of a single PWM interval in milliseconds. The heater/Stirling engine combination has a fair amount of thermal and physical inertia, so you can set this to a few seconds. 2000ms is fine.
+- **heaterPin** (optional) - Set this to whatever you used for the FET signal. Note that this is the logical pin, not the physical pin.
 
-// Length (ms) of each PWM interval.
-const pwmInterval = 2000;
+For `sources` I'm showing a few different examples Here's what those parameters mean:
 
-// Heater control pin.
-const heaterPin = 18; // physical pin 12
-
-// Data sources, parameter to measure, initial min/max guesses etc
-const sources = {
-  wind: {
-    url: `https://swd.weatherflow.com/swd/rest/observations/station/40983?token=${process.env.TOKEN}`,
-    param: 'wind_gust',
-    minMax: [0, 20],
-    historyLength: 5, // super noisy
-    dataInterval: 1,
-  },
-  aircraft: {
-    url: 'http://192.168.1.5/dump1090-fa/data/aircraft.json',
-    param: 'flight',
-    minMax: [10, 100],
-    historyLength: 1, // not noisy
-    dataInterval: 1,
-  },
-};
-```
-
-Edit this section, keeping the following in mind:
-
-- **duty** - This is an array with min and max possible PWM duty cycles where the lowest min is 0 an the highest max is 1. Set the first number just high enough to keep the Stirling engine spinning at idle. If you set this too low the Stirling engine will stop spinning and you'll need to give it a push to get it going again. Set the high number at or below 1.0. In my case I found that anything above 0.8 spun the Stirling engine like a monkey on crack.
-- **pwmInterval** - This is the length of a single PWM interval in milliseconds. The heater/Stirling engine combination has a fair amount of thermal and physical inertia, so you can set this to a few seconds. 2000ms is fine.
-- **heaterPin** - Set this to whatever you used for the FET signal. Note that this is the logical pin, not the physical pin.
-
-For `sources` I'm showing examples based on my [FlightAware ADS-B receiver](https://flightaware.com/adsb/piaware/) and my [Weatherflow Tempest weather station](https://weatherflow.com/tempest-weather-system/). Here's what those parameters mean:
-
-- **url** - where to get the data.
-- **param** - what parameter to measure. See the note below about the `getData()` function.
-- **minMax** - an array with the minimum and maximum expected values for `param`. Start with some conservative numbers here; over time the app will adjust these outward as needed. Note that with no persistent storage this will reset anytime your program restarts.
-- **historyLength** - If you set this to greater then 1, the program will use a running average of this many historical measurements to smooth noisy data.
-- **dataInterval** - How often (in minutes) to retrieve new data.
-
-#### Note about sources
-
-The `getData()` function has a `switch` statement for parsing data based on the different data sources. Make sure you edit this as needed to parse the data your data source returns. Yeah, this could be better.
+- **url** - (required) where to get the data. If `filter` is not defined, this must return a number.
+- **minMax** - (optonal) an array with the minimum and maximum expected values for `param`. Start with some conservative numbers here; over time the app will adjust these outward as needed. Note that with no persistent storage this will reset anytime your program restarts.
+- **samplesToAverage** - (optonal) If you set this to greater then 1, the program will use a running average of this many historical measurements to smooth noisy data.
+- **dataInterval** - (optonal) How often (in seconds) to retrieve new data.
+- **filter** - (optional) A function to apply to the response from `url`. This must return a number.
 
 #### Environment Variables
 
-If you put a file called `.env` in the root of your application, the `dotenv` library will grab any values out of it and put them into the Nodejs environment at runtime. This allows you to keep sensitive information out of your source code (this file is ignored by git). Here's what I put in mine:
+If you put a file called `.env` in the root of your application, the `dotenv` library will grab any values out of it and put them into the Nodejs environment at runtime. This allows you to keep sensitive information out of your source code (this file is ignored by git). Here's what I put in my `config.js`:
 
 ```
-TOKEN=blah-blah-blah
-TYPE='aircraft'
+# Weatherflow Stuff
+WEATHERFLOW_TOKEN='blah blah blah'
+WEATHERFLOW_STATION_ID=40983
+
+# Azure DevOps Stuff
+DEVOPS_PAT='blah blah blah'
+AGENT_POOL_ID=27
+
+# PiAware Stuff
+PIAWARE_HOST='192.168.1.5'
 ```
 
-These envionment variables can then be read in your code as `process.env.TOKEN` and `process.env.TYPE`. Note that if you choose not to do this you'll need to update the value for `dataType` in the `app.js` STARTUP block.
+These envionment variables can then be read in your code as `process.env.WEATHERFLOW_TOKEN`, `process.env.WEATHERFLOW_STATION_ID` etc.
 
 ## Usage
 
@@ -154,3 +128,4 @@ You can use the fantastic [PM2](https://pm2.keymetrics.io/docs/usage/quick-start
 4. Type `pm2 save` to save the process list for automatic respawn.
 
 That's it. Now your app will start up automatically anytime you power up your RPi. You can monitor your app and see log output with `pm2 monit`.
+2
