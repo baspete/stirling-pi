@@ -20,7 +20,7 @@ const config = {
       // these are optional
       minMax: [0, 10],
       samplesToAverage: 3, // super noisy, so let's use a longer history
-      dataInterval: 5,
+      dataInterval: 30,
       filter: function (response) {
         let val = response.data.obs[0]['wind_gust'];
         return val;
@@ -32,7 +32,7 @@ const config = {
       // these are optional
       minMax: [0, 100],
       samplesToAverage: 1,
-      dataInterval: 5,
+      dataInterval: 60,
       filter: function (response) {
         let aircraft = response.data.aircraft.filter((a) => {
           return a.flight ? true : false;
@@ -46,7 +46,7 @@ const config = {
       // these are optional
       minMax: [0, 20],
       samplesToAverage: 1,
-      dataInterval: 5,
+      dataInterval: 60,
       auth: {
         username: '',
         password: process.env.DEVOPS_PAT,
