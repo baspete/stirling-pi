@@ -131,6 +131,11 @@ if (
       'duty cycle:',
       calculateDutyCycle(avg(history), minMax, duty)
     );
+
+    // If there's a callback, pass it the value
+    if (source.callback) {
+      return source.callback(val);
+    }
   }, dataInterval * 1000);
 } else {
   console.log('Error: missing config. Stopping.');

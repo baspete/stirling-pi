@@ -85,7 +85,8 @@ For `sources` I'm showing a few different examples Here's what those parameters 
 - **minMax** - (optonal) an array with the minimum and maximum expected values for `param`. Start with some conservative numbers here; over time the app will adjust these outward as needed. Note that with no persistent storage this will reset anytime your program restarts.
 - **samplesToAverage** - (optonal) If you set this to greater then 1, the program will use a running average of this many historical measurements to smooth noisy data.
 - **dataInterval** - (optonal) How often (in seconds) to retrieve new data.
-- **filter** - (optional) A function to apply to the response from `url`. This must return a number.
+- **filter** - (optional) A synchronous function to apply to the response from `url`. This must return a number.
+- **callback** - (optional) An asynchronous function to run after each sample. This most recent sample value is passed to this function. Use this if for example you wanted to log each sample to the filesystem or a remote store.
 
 #### Environment Variables
 

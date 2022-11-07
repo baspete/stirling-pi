@@ -1,4 +1,6 @@
 require('dotenv').config();
+const axios = require('axios');
+const dayjs = require('dayjs');
 
 const config = {
   // (optional) Min/Max duty cycle. duty[0] is the min required to keep
@@ -56,6 +58,23 @@ const config = {
           return a.provisioningState === 'RunningRequest';
         });
         return agents.length;
+      },
+      callback: function (val) {
+        return new Promise((resolve, reject) => {
+          const url = `${process.env.BLOB_URL}&comp=appendblock`;
+          const body = `\n${dayjs().toISOString()},${val}`;
+          axios
+            .put(url, body, {
+              headers: { 'Content-Type': 'text/plain' },
+            })
+            .then((response) => {
+              resolve(response.data);
+            })
+            .catch((error) => {
+              console.error(error);
+              reject(error);
+            });
+        });
       },
     },
   },
