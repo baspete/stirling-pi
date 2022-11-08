@@ -6,7 +6,7 @@ const config = {
   // (optional) Min/Max duty cycle. duty[0] is the min required to keep
   // the stirling engine idling. duty[1] is the max to keep
   // it from spinning like a monkey on cocaine and throwing a rod.
-  duty: [0.2, 0.7],
+  duty: [0.2, 1],
 
   // (optional) Length (ms) of each PWM interval.
   pwmInterval: 2000,
@@ -48,7 +48,7 @@ const config = {
       // these are optional
       minMax: [0, 20],
       samplesToAverage: 1,
-      dataInterval: 60,
+      dataInterval: 10,
       auth: {
         username: '',
         password: process.env.DEVOPS_PAT,
@@ -71,7 +71,6 @@ const config = {
               resolve(response.data);
             })
             .catch((error) => {
-              console.error(error);
               reject(error);
             });
         });

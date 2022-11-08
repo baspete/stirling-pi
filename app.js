@@ -134,7 +134,18 @@ if (
 
     // If there's a callback, pass it the value
     if (source.callback) {
-      return source.callback(val);
+      source
+        .callback(val)
+        .then((response) => {
+          // console.log('Callback Finished');
+        })
+        .catch((error) => {
+          console.log(
+            'Callback error:',
+            error.response.status,
+            error.response.statusText
+          );
+        });
     }
   }, dataInterval * 1000);
 } else {
