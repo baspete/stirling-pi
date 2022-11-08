@@ -48,7 +48,7 @@ const config = {
       // these are optional
       minMax: [0, 20],
       samplesToAverage: 1,
-      dataInterval: 10,
+      dataInterval: 60,
       auth: {
         username: '',
         password: process.env.DEVOPS_PAT,
