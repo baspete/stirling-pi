@@ -11,18 +11,6 @@ let display,
   Color,
   Layer = null;
 
-if (config.displayAddress) {
-  display = ssd1306.display;
-  Font = ssd1306.Font;
-  Color = ssd1306.Color;
-  Layer = ssd1306.Layer;
-
-  display.init(1, config.displayAddress); // Open bus and initialize driver
-  display.setFont(Font.UbuntuMono_8ptFontInfo);
-  display.turnOn(); // Turn on display module
-  display.clearScreen(); // Clear display buffer
-}
-
 // ***********************************************
 // FUNCTIONS
 
@@ -93,8 +81,8 @@ function getData(url, auth, filter) {
 
 /**
  * @param {object} display An initialized display object
- * @param {number} val The value to display
- * @param {array} range The min/max values
+ * @param {number} val The value to display (string or number)
+ * @param {array} range The min/max values (array of two numbers)
  */
 function updateDisplay(display, val, range) {
   // Don't bother if we don't have a display
@@ -108,13 +96,14 @@ function updateDisplay(display, val, range) {
     val = range[1];
   }
   const fontSize = 5;
-  valStr = val.toString() || '--';
+  const valStr = val.toString();
+  // Where to start the value display
   const stringStart = 64 - valStr.length * 15;
+  // The width of our top bar (at least one px)
   const width = Math.max(
     parseInt((128 * (val || range[0])) / range[1] - range[0]),
     1
-  ); // at least on px
-  console.log('width', width);
+  );
   display.clearScreen(); // Clear display buffer
   // Render the meter
   display.drawRect(0, 0, width, 12, Color.White, Layer.Layer0);
@@ -157,10 +146,21 @@ if (
   // Assign the heater to a GPIO pin
   const heater = new Gpio(heaterPin, 'out');
 
-  // Initialize the OLED display
-  updateDisplay(display, null, minMax);
+  // If we've got a display, initialize it.
+  if (config.displayAddress) {
+    display = ssd1306.display;
+    Font = ssd1306.Font;
+    Color = ssd1306.Color;
+    Layer = ssd1306.Layer;
+    display.init(1, config.displayAddress);
+    display.setFont(Font.UbuntuMono_8ptFontInfo);
+    display.turnOn();
+    display.clearScreen();
+    // Render a starting value
+    updateDisplay(display, '--', minMax);
+  }
 
-  // This is the main PWM loop, running continuously at 'interval' milliseconds
+  // This is the main PWM loop powering the heater, running continuously at 'interval' milliseconds
   setInterval(() => {
     heater.writeSync(1); // heater on
     setTimeout(() => {
@@ -184,7 +184,7 @@ if (
       history.shift();
     }
 
-    // Log something useful
+    // Log something useful to the console
     console.info(
       dataType,
       history,
