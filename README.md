@@ -15,7 +15,7 @@ This project shows how to control the speed of a [stirling engine](https://en.wi
 
 ### Optional
 
-1. **A Display** - I wired up a small I2C driven OLED display. Haven't figured out what to do with it.
+1. **A Display** - I wired up a small I2C driven OLED display that uses the SSD1306 chipset. If you provide the I2C address in `config.js` it will render current values.
 1. **A Thermal Pad** - I cut one of [these](https://www.amazon.com/gp/product/B085VSJFY7) to match the bottom plate of the Stirling engine and put on top of the heater to ensure good thermal transfer. Also it keeps things from sliding around.
 1. **A Project Box** - I used a wood box I had lying around.
 
@@ -78,6 +78,7 @@ Open the `config.js` file in your editor. Edit the values as needed, keeping the
 - **duty** (optional) - This is an array with min and max possible PWM duty cycles where the lowest min is 0 an the highest max is 1. Set the first number just high enough to keep the Stirling engine spinning at idle. If you set this too low the Stirling engine will stop spinning and you'll need to give it a push to get it going again. Set the high number at or below 1.0. In my case I found that anything above 0.8 spun the Stirling engine like a monkey on crack.
 - **pwmInterval** (optional) - This is the length of a single PWM interval in milliseconds. The heater/Stirling engine combination has a fair amount of thermal and physical inertia, so you can set this to a few seconds. 2000ms is fine.
 - **heaterPin** (optional) - Set this to whatever you used for the FET signal. Note that this is the logical pin, not the physical pin.
+- **displayAddress** (optional) - If you have a I2C OLED display with the SSD1306 chipset, set the I2C address here.
 
 For `sources` I'm showing a few different examples Here's what those parameters mean:
 
