@@ -42,7 +42,7 @@ function avg(arr) {
  * @param {array} range - possible output value endpoints
  * @returns {number} y (rounded to 2 decimal places)
  */
-function calculateDutyCycle(x, domain, range) {
+function calculateDutyCycleAffine(x, domain, range) {
   let y =
     ((range[1] - range[0]) / (domain[1] - domain[0])) * (x - domain[0]) +
     range[0];
@@ -81,10 +81,11 @@ function getData(url, auth, filter) {
 
 /**
  * @param {object} display An initialized display object
+ * @param {string} dataType The type of data (from config.js)
  * @param {number} val The value to display (string or number)
  * @param {array} range The min/max values (array of two numbers)
  */
-function updateDisplay(display, val, range) {
+function updateDisplay(display, dataType, val, range) {
   // Don't bother if we don't have a display
   if (!display) return;
   // Make sure val is within range
@@ -98,18 +99,29 @@ function updateDisplay(display, val, range) {
   const fontSize = 5;
   const valStr = val.toString();
   // Where to start the value display
-  const stringStart = 64 - valStr.length * 15;
+  const dataStringStart = 64 - (valStr.length / 2) * 20;
+  const titleStringStart = 64 - (dataType.length / 2) * 5;
   // The width of our top bar (at least one px)
   const width = Math.max(
     parseInt((128 * (val || range[0])) / range[1] - range[0]),
     1
   );
   display.clearScreen(); // Clear display buffer
+  // Render the title
+  display.drawString(
+    titleStringStart,
+    0,
+    dataType.toUpperCase(),
+    1.5,
+    Color.White,
+    Layer.Layer0
+  );
+
   // Render the meter
-  display.drawRect(0, 0, width, 12, Color.White, Layer.Layer0);
+  // display.drawRect(0, 0, width, 12, Color.White, Layer.Layer0);
   // Render the text
   display.drawString(
-    stringStart,
+    dataStringStart,
     17,
     valStr,
     fontSize,
@@ -147,6 +159,7 @@ if (
   const heater = new Gpio(heaterPin, 'out');
 
   // If we've got a display, initialize it.
+  // TODO: try https://github.com/perjg/oled_ssd1306_i2c
   if (config.displayAddress) {
     display = ssd1306.display;
     Font = ssd1306.Font;
@@ -157,7 +170,7 @@ if (
     display.turnOn();
     display.clearScreen();
     // Render a starting value
-    updateDisplay(display, '--', minMax);
+    updateDisplay(display, config.dataType, '--', minMax);
   }
 
   // This is the main PWM loop powering the heater, running continuously at 'interval' milliseconds
@@ -165,7 +178,7 @@ if (
     heater.writeSync(1); // heater on
     setTimeout(() => {
       heater.writeSync(0); // heater off
-    }, calculateDutyCycle(avg(history), minMax, duty) * pwmInterval);
+    }, calculateDutyCycleAffine(avg(history), minMax, duty) * pwmInterval);
   }, pwmInterval);
 
   // This is the main data loop, running continuously at 'dataInterval' seconds
@@ -192,11 +205,11 @@ if (
       avg(history),
       `(${minMax[0]}-${minMax[1]})`,
       'duty cycle:',
-      calculateDutyCycle(avg(history), minMax, duty)
+      calculateDutyCycleAffine(avg(history), minMax, duty)
     );
 
     // Send something to the OLED display
-    updateDisplay(display, val, minMax);
+    updateDisplay(display, config.dataType, val, minMax);
 
     // If there's a callback, pass it the value
     if (source.callback) {

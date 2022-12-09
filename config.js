@@ -6,7 +6,7 @@ const config = {
   // (optional) Min/Max duty cycle. duty[0] is the min required to keep
   // the stirling engine idling. duty[1] is the max to keep
   // it from spinning like a monkey on cocaine and throwing a rod.
-  duty: [0.27, 1],
+  duty: [0.2, 1],
 
   // (optional) Length (ms) of each PWM interval.
   pwmInterval: 2000,
@@ -58,7 +58,10 @@ const config = {
       },
       filter: function (response) {
         let agents = response.data.value.filter((a) => {
-          return a.provisioningState === 'RunningRequest';
+          return (
+            a.provisioningState === 'RunningRequest' ||
+            a.provisioningState === 'Provisioning'
+          );
         });
         return agents.length;
       },
