@@ -47,7 +47,7 @@ const config = {
     },
     agents: {
       // this is required
-      url: `https://dev.azure.com/geaviationdigital-dss/_apis/distributedtask/pools/${process.env.AGENT_POOL_ID}/agents`,
+      url: `https://dev.azure.com/${process.env.DEVOPS_ORG}/_apis/distributedtask/pools/${process.env.AGENT_POOL_ID}/agents`,
       // these are optional
       minMax: [0, 20],
       samplesToAverage: 1,
