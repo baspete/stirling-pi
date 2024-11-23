@@ -6,10 +6,10 @@ const config = {
   // (optional) Min/Max duty cycle. duty[0] is the min required to keep
   // the stirling engine idling. duty[1] is the max to keep
   // it from spinning like a monkey on cocaine and throwing a rod.
-  duty: [0.2, 1],
+  duty: [0.4, 1],
 
   // (optional) Length (ms) of each PWM interval.
-  pwmInterval: 2000,
+  pwmInterval: 100,
 
   // (optional) Heater control pin.
   heaterPin: 18, // physical pin 12
@@ -25,7 +25,7 @@ const config = {
       // these are optional
       minMax: [0, 10],
       samplesToAverage: 3, // super noisy, so let's use a longer history
-      dataInterval: 30,
+      dataInterval: 10,
       filter: function (response) {
         let val = response.data.obs[0]['wind_gust'];
         return val;
@@ -37,7 +37,7 @@ const config = {
       // these are optional
       minMax: [0, 100],
       samplesToAverage: 1,
-      dataInterval: 60,
+      dataInterval: 20,
       filter: function (response) {
         let aircraft = response.data.aircraft.filter((a) => {
           return a.flight ? true : false;
@@ -51,12 +51,13 @@ const config = {
       // these are optional
       minMax: [0, 20],
       samplesToAverage: 1,
-      dataInterval: 60,
+      dataInterval: 15,
       auth: {
         username: '',
         password: process.env.DEVOPS_PAT,
       },
       filter: function (response) {
+        console.log(response);
         let agents = response.data.value.filter((a) => {
           return (
             a.provisioningState === 'RunningRequest' ||
